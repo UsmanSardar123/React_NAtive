@@ -19,9 +19,6 @@ export default function Pagination({
       < Button
         title="Previous"
         onPress={onPrevious}
-        
-
-
         disabled={currentPage <= 1}
       />
 
