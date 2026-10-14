@@ -16,9 +16,12 @@ export default function Pagination({
 }: PaginationProps) {
   return (
     <View style={styles.container}>
-      <Button
+      < Button
         title="Previous"
         onPress={onPrevious}
+        
+
+
         disabled={currentPage <= 1}
       />
 
