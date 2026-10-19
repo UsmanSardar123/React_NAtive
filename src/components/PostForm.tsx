@@ -29,21 +29,28 @@ export default function PostForm({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
+  const [titleError, setTitleError] = useState('');
+  const [bodyError, setBodyError] = useState('');
   const loadingState = externalLoading ?? loading;
   const errorMessage = externalError ?? (isError ? message : null);
-  const successMessage = externalSuccess ? 'Post saved successfully.' : (!isError ? message : '');
+  const successMessage = !externalSuccess && !isError ? message : '';
   const titleCount = useMemo(() => `${title.length}/100`, [title.length]);
   const bodyCount = useMemo(() => `${body.length}/1000`, [body.length]);
 
   async function handleSubmit() {
-    if (!title.trim() || !body.trim()) {
+    const nextTitleError = title.trim() ? '' : 'Title is required.';
+    const nextBodyError = body.trim() ? '' : 'Body is required.';
+    setTitleError(nextTitleError);
+    setBodyError(nextBodyError);
+    if (nextTitleError || nextBodyError) {
       setIsError(true);
-      setMessage('Enter both a title and body.');
+      setMessage('');
       return;
     }
 
     setLoading(true);
     setMessage('');
+    setIsError(false);
     try {
       await onSubmit({ title: title.trim(), body: body.trim() });
       setIsError(false);
@@ -69,10 +76,15 @@ export default function PostForm({
         placeholder="Enter a title"
         placeholderTextColor={colors.subtext}
         value={title}
-        onChangeText={setTitle}
+        onChangeText={(value) => {
+          setTitle(value);
+          if (value.trim()) setTitleError('');
+          setMessage('');
+        }}
         maxLength={100}
       />
       <Text style={[styles.counter, { color: colors.subtext }]}>{titleCount}</Text>
+      {!!titleError && <Text style={[styles.fieldError, { color: colors.danger }]}>{titleError}</Text>}
 
       <Text style={[styles.label, { color: colors.text }]}>Body</Text>
       <TextInput
@@ -81,12 +93,17 @@ export default function PostForm({
         placeholder="Write your post"
         placeholderTextColor={colors.subtext}
         value={body}
-        onChangeText={setBody}
+        onChangeText={(value) => {
+          setBody(value);
+          if (value.trim()) setBodyError('');
+          setMessage('');
+        }}
         multiline
         maxLength={1000}
         textAlignVertical="top"
       />
       <Text style={[styles.counter, { color: colors.subtext }]}>{bodyCount}</Text>
+      {!!bodyError && <Text style={[styles.fieldError, { color: colors.danger }]}>{bodyError}</Text>}
 
       {!!errorMessage && <Text style={[styles.error, { color: colors.danger }]}>{errorMessage}</Text>}
       {!!successMessage && <Text style={[styles.success, { color: colors.success }]}>{successMessage}</Text>}
@@ -110,6 +127,7 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.65 },
   buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   error: { marginTop: 12 },
+  fieldError: { fontSize: 13, marginTop: 4 },
   success: { marginTop: 12 },
   counter: { fontSize: 12, marginTop: 4, textAlign: 'right' },
 });

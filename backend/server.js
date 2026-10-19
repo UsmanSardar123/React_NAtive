@@ -13,6 +13,23 @@ function isValidPostId(id) {
   return mongoose.isValidObjectId(id);
 }
 
+function validatePostInput(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return { error: 'Request body must be a JSON object.' };
+  }
+
+  const { title, body: content } = body;
+  if (typeof title !== 'string' || !title.trim()) {
+    return { error: 'Title is required.' };
+  }
+
+  if (typeof content !== 'string' || !content.trim()) {
+    return { error: 'Body is required.' };
+  }
+
+  return { value: { title: title.trim(), body: content.trim() } };
+}
+
 app.get('/', (req, res) => {
   res.send('Backend is running!');
 });
@@ -30,14 +47,17 @@ app.get('/api/posts', async (req, res) => {
 
 // Create a new post in MongoDB
 app.post('/api/posts', async (req, res) => {
-  try {
-    const { title, body } = req.body;
+  const input = validatePostInput(req.body);
+  if (input.error) {
+    return res.status(400).json({ message: input.error });
+  }
 
-    const post = await Post.create({ title, body });
+  try {
+    const post = await Post.create(input.value);
 
     res.status(201).json(post);
   } catch (error) {
-    if (error.name === 'ValidationError') {
+    if (error.name === 'ValidationError' || error.name === 'CastError') {
       return res.status(400).json({ message: error.message });
     }
 
@@ -72,11 +92,15 @@ app.put('/api/posts/:id', async (req, res) => {
     return res.status(400).json({ message: 'Invalid post ID' });
   }
 
+  const input = validatePostInput(req.body);
+  if (input.error) {
+    return res.status(400).json({ message: input.error });
+  }
+
   try {
-    const { title, body } = req.body;
     const post = await Post.findByIdAndUpdate(
       req.params.id,
-      { title, body },
+      input.value,
       { new: true, runValidators: true }
     );
 

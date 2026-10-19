@@ -14,6 +14,9 @@ type PostListProps = {
   onRefresh?: () => void;
   refreshing?: boolean;
   ListHeaderComponent?: React.ReactElement | null;
+  selectedPostId?: string | null;
+  actionIcon?: string;
+  actionColor?: string;
 };
 
 export default function PostList({
@@ -24,6 +27,9 @@ export default function PostList({
   onRefresh,
   refreshing = false,
   ListHeaderComponent,
+  selectedPostId = null,
+  actionIcon,
+  actionColor,
 }: PostListProps) {
   const { colors } = useTheme();
 
@@ -44,7 +50,13 @@ export default function PostList({
       }
       ListEmptyComponent={<Text style={[styles.empty, { color: colors.subtext }]}>{emptyMessage}</Text>}
       renderItem={({ item }) => (
-        <PostCard post={item} onPress={onSelect} />
+        <PostCard
+          post={item}
+          onPress={onSelect}
+          selected={item._id === selectedPostId}
+          actionIcon={actionIcon}
+          actionColor={actionColor}
+        />
       )}
     />
   );

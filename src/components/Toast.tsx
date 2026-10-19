@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -54,12 +54,12 @@ export function useToast() {
     if (timeout.current) clearTimeout(timeout.current);
   }, []);
 
-  function showToast(message: string, type: ToastType) {
+  const showToast = useCallback((message: string, type: ToastType) => {
     if (timeout.current) clearTimeout(timeout.current);
     setToast({ message, type });
     setVisible(true);
     timeout.current = setTimeout(() => setVisible(false), 2000);
-  }
+  }, []);
 
   return {
     showToast,

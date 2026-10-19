@@ -17,7 +17,12 @@ function AppShell() {
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <SafeAreaView edges={['top', 'right', 'bottom', 'left']} style={[styles.container, { backgroundColor: colors.background }]}>
         {selectedAction ? (
-          selectedAction === 'Create Post' ? <CreatePostScreen onGoHome={() => setSelectedAction(null)} /> :
+          selectedAction === 'Create Post' ? (
+            <CreatePostScreen
+              onGoHome={() => setSelectedAction(null)}
+              onCreated={() => setSelectedAction('Read Posts')}
+            />
+          ) :
             selectedAction === 'Read Posts' ? <ReadPostsScreen onGoHome={() => setSelectedAction(null)} /> :
               selectedAction === 'Update Post' ? <UpdatePostScreen onGoHome={() => setSelectedAction(null)} /> :
                 <DeletePostScreen onGoHome={() => setSelectedAction(null)} />
