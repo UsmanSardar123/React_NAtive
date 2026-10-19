@@ -1,36 +1,35 @@
-
 export interface Post {
- // userId: number;
-  id: number;
+  _id: string;
   title: string;
   body: string;
-  userId: number;
-  
-
-
-
-
-
-
-
-
 }
 
+export type PostInput = Pick<Post, 'title' | 'body'>;
 
-const POSTS_API_URL = 'https://jsonplaceholder.typicode.com/posts';
+import { request } from './client';
 
-export async function fetchPosts(): Promise<Post[]> {
-  const response = await fetch(POSTS_API_URL);
-
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
-  }
-
-  const data: unknown = await response.json();
-
-  if (!Array.isArray(data)) {
-    throw new Error('Invalid API response: expected an array');
-  }
-
-  return data as Post[];
+export function getPosts(): Promise<Post[]> {
+  return request<Post[]>('/api/posts');
 }
+
+export function createPost(post: PostInput): Promise<Post> {
+  return request<Post>('/api/posts', {
+    method: 'POST',
+    body: JSON.stringify(post),
+  });
+}
+
+export function updatePost(id: string, post: PostInput): Promise<Post> {
+  return request<Post>(`/api/posts/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify(post),
+  });
+}
+
+export async function deletePost(id: string): Promise<void> {
+  await request<{ message: string }>(`/api/posts/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}
+
+export const fetchPosts = getPosts;

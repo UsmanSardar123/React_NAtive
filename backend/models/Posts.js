@@ -13,10 +13,6 @@ const postSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    userId: {
-      type: Number,
-      required: true,
-    },
   },
   {
     timestamps: true,
