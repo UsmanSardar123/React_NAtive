@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import type { PostInput } from '../services/postsApi';
@@ -31,13 +31,18 @@ export default function PostForm({
   const [isError, setIsError] = useState(false);
   const [titleError, setTitleError] = useState('');
   const [bodyError, setBodyError] = useState('');
-  const loadingState = externalLoading ?? loading;
-  const errorMessage = externalError ?? (isError ? message : null);
+  const submitting = useRef(false);
+  const [dismissedExternalError, setDismissedExternalError] = useState(false);
+  const loadingState = !!externalLoading || loading;
+  const errorMessage = (externalError && !dismissedExternalError ? externalError : null)
+    ?? (isError ? message : null);
   const successMessage = !externalSuccess && !isError ? message : '';
   const titleCount = useMemo(() => `${title.length}/100`, [title.length]);
   const bodyCount = useMemo(() => `${body.length}/1000`, [body.length]);
 
   async function handleSubmit() {
+    if (submitting.current || loadingState) return;
+
     const nextTitleError = title.trim() ? '' : 'Title is required.';
     const nextBodyError = body.trim() ? '' : 'Body is required.';
     setTitleError(nextTitleError);
@@ -48,9 +53,11 @@ export default function PostForm({
       return;
     }
 
+    submitting.current = true;
     setLoading(true);
     setMessage('');
     setIsError(false);
+    setDismissedExternalError(false);
     try {
       await onSubmit({ title: title.trim(), body: body.trim() });
       setIsError(false);
@@ -64,6 +71,7 @@ export default function PostForm({
       setMessage(error instanceof Error ? error.message : 'Unable to save post.');
     } finally {
       setLoading(false);
+      submitting.current = false;
     }
   }
 
@@ -76,10 +84,12 @@ export default function PostForm({
         placeholder="Enter a title"
         placeholderTextColor={colors.subtext}
         value={title}
+        editable={!loadingState}
         onChangeText={(value) => {
           setTitle(value);
           if (value.trim()) setTitleError('');
           setMessage('');
+          setDismissedExternalError(true);
         }}
         maxLength={100}
       />
@@ -93,10 +103,12 @@ export default function PostForm({
         placeholder="Write your post"
         placeholderTextColor={colors.subtext}
         value={body}
+        editable={!loadingState}
         onChangeText={(value) => {
           setBody(value);
           if (value.trim()) setBodyError('');
           setMessage('');
+          setDismissedExternalError(true);
         }}
         multiline
         maxLength={1000}

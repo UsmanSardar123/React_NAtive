@@ -5,7 +5,7 @@ import { getPosts, type Post } from '../services/postsApi';
 import { useTheme } from '../theme/ThemeContext';
 import { timeAgo } from '../utils/formatDate';
 
-export type CrudAction = 'Create Post' | 'Read Posts' | 'Update Post' | 'Delete Post';
+export type CrudAction = 'Create Post' | 'Read Posts' | 'Update Post' | 'Delete Post' | 'Manage Users';
 
 type HomeScreenProps = {
   onSelectAction: (action: CrudAction) => void;
@@ -14,6 +14,7 @@ type HomeScreenProps = {
 type PostWithDates = Post & { createdAt?: string; updatedAt?: string };
 
 const actionMeta: Array<{ action: CrudAction; icon: string; tint: string }> = [
+  { action: 'Manage Users', icon: 'U', tint: '#7C3AED' },
   { action: 'Create Post', icon: '✎', tint: '#4F46E5' },
   { action: 'Read Posts', icon: '☰', tint: '#0EA5E9' },
   { action: 'Update Post', icon: '✏️', tint: '#10B981' },
@@ -76,6 +77,8 @@ export default function HomeScreen({ onSelectAction }: HomeScreenProps) {
           <Text style={[styles.statsLabel, { color: colors.subtext }]}>Total posts</Text>
           {loading ? (
             <View style={styles.skeletonLine} />
+          ) : error ? (
+            <Text style={[styles.statsValue, { color: colors.subtext }]}>—</Text>
           ) : (
             <Text style={[styles.statsValue, { color: colors.text }]}>{posts?.length ?? 0}</Text>
           )}
@@ -102,7 +105,9 @@ export default function HomeScreen({ onSelectAction }: HomeScreenProps) {
         {search ? (
           <View style={[styles.resultsSection, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg }]}> 
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Matches</Text>
-            {matchedPosts.length ? (
+            {error ? (
+              <Text style={[styles.emptyText, { color: colors.danger }]}>Posts could not be searched. Check the API connection and retry.</Text>
+            ) : matchedPosts.length ? (
               matchedPosts.slice(0, 4).map((post) => (
                 <Pressable key={post._id} onPress={() => onSelectAction('Read Posts')} style={[styles.recentItem, { borderColor: colors.border }]}> 
                   <Text style={[styles.recentTitle, { color: colors.text }]}>{post.title}</Text>
@@ -144,7 +149,8 @@ export default function HomeScreen({ onSelectAction }: HomeScreenProps) {
 
       <Pressable
         accessibilityRole="button"
-        onPress={() => onSelectAction('Create Post')}
+        accessibilityLabel="Open user directory"
+        onPress={() => onSelectAction('Manage Users')}
         style={[styles.fab, { backgroundColor: colors.accent }]}
       >
         <Text style={styles.fabText}>＋</Text>

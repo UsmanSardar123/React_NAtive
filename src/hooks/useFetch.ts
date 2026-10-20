@@ -21,5 +21,5 @@ export default function useFetch<T>(fn: () => Promise<T>) {
     load();
   }, [load]);
 
-  return { data, loading, error, reload: load };
+  return { data, loading, error, reload: load, setData };
 }

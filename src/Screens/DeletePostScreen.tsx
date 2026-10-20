@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import PostList from '../components/PostList';
 import ScreenHeader from '../components/ScreenHeader';
@@ -16,13 +16,16 @@ export default function DeletePostScreen({ onGoHome }: Props) {
   const { data: posts, loading, error, reload } = useFetch(getPosts);
   const mutation = useMutation(deletePost);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const deleting = useRef(false);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(() => new Set());
   const { toast, showToast } = useToast();
   const filteredPosts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return (posts ?? []).filter((post) =>
-      `${post.title} ${post.body}`.toLowerCase().includes(normalizedQuery),
+      !deletedIds.has(post._id)
+      && `${post.title} ${post.body}`.toLowerCase().includes(normalizedQuery),
     );
-  }, [posts, query]);
+  }, [deletedIds, posts, query]);
 
   useEffect(() => {
     if (mutation.success) showToast('Post deleted', 'success');
@@ -33,13 +36,16 @@ export default function DeletePostScreen({ onGoHome }: Props) {
   }, [mutation.error, showToast]);
 
   function confirmDelete(post: Post) {
-    setSelectedPostId(post._id);
+    if (deleting.current || mutation.loading || !post._id) return;
     Alert.alert('Delete post?', `Delete “${post.title}”? This cannot be undone.`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
         onPress: () => {
+          if (deleting.current) return;
+          deleting.current = true;
+          setSelectedPostId(post._id);
           removePost(post).catch(() => undefined);
         },
       },
@@ -47,18 +53,27 @@ export default function DeletePostScreen({ onGoHome }: Props) {
   }
 
   async function removePost(post: Post) {
-    await mutation.run(post._id);
-    setSelectedPostId(null);
-    await reload();
+    try {
+      await mutation.run(post._id);
+      setDeletedIds((current) => new Set(current).add(post._id));
+      setSelectedPostId(null);
+      await reload();
+    } finally {
+      deleting.current = false;
+    }
   }
 
-  const visibleError = error ?? mutation.error;
+  const visibleError = mutation.error;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, padding: spacing.lg }]}> 
       <ScreenHeader title="Delete Post" onGoHome={onGoHome} />
       {!!visibleError && <Text style={[styles.error, { color: colors.danger }]}>{visibleError}</Text>}
-      {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.accent} /><Text style={[styles.message, { color: colors.subtext }]}>Loading posts...</Text></View> :
+      {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.accent} /><Text style={[styles.message, { color: colors.subtext }]}>Loading posts...</Text></View> : error ?
+        <View style={styles.center}>
+          <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>
+          <Pressable onPress={reload}><Text style={[styles.retry, { color: colors.accent }]}>Try again</Text></Pressable>
+        </View> :
         <><Text style={[styles.hint, { color: colors.subtext }]}>Search and choose a post, then confirm deletion.</Text>
           <View style={[styles.searchRow, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md }]}>
             <Text style={[styles.searchIcon, { color: colors.subtext }]}>⌕</Text>

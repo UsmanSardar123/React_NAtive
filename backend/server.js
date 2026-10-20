@@ -4,10 +4,12 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 const Post = require('./models/Posts');
+const userRoutes = require('./routes/users');
 
 const app = express();
 
 app.use(express.json());
+app.use('/api/users', userRoutes);
 
 function isValidPostId(id) {
   return mongoose.isValidObjectId(id);

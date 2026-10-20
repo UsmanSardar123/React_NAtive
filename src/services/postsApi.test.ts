@@ -79,6 +79,26 @@ describe('posts API client', () => {
     );
   });
 
+  it('rejects an invalid list response instead of treating it as an empty list', async () => {
+    fetchMock.mockResolvedValue(response({ posts: [post] }));
+
+    await expect(getPosts()).rejects.toThrow('The server returned an invalid posts response.');
+  });
+
+  it('rejects an update response that does not contain a post', async () => {
+    fetchMock.mockResolvedValue(response({ message: 'updated' }));
+
+    await expect(updatePost(post._id, { title: post.title, body: post.body }))
+      .rejects.toThrow('The server returned an invalid post response.');
+  });
+
+  it('does not send update or delete requests without a post ID', async () => {
+    await expect(updatePost('', { title: post.title, body: post.body }))
+      .rejects.toThrow('A post ID is required.');
+    await expect(deletePost(' ')).rejects.toThrow('A post ID is required.');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('shows backend validation errors and HTTP status to the user', async () => {
     fetchMock.mockResolvedValue(response({ message: 'Title is required.' }, 400));
 
